@@ -331,7 +331,7 @@ def fit_on_text(data):
     length_list=[len(seq) for seq in data]
     avg=sum(length_list)/len(length_list)
     max_length= int(max(length_list)-avg)                                 #max-average number of words in each sentence.   
-    # max_length=500 
+    max_length=500 
     print("Max length for pad sequences: ",max_length)
     
 
@@ -348,6 +348,24 @@ def fit_on_text(data):
     return max_length,token
 
 def texts_to_sequences(token,max_length,list_of_list_tokens):
+    """
+    Transforms each text in list to a sequence of integers.
+    Takes each word in the list and replaces it with its corresponding integer value from the word_index dictionary created.
+    Only words known by the tokenizer will be taken into account.
+    
+    text_to_sequence: List of list where each element is a number/int taken from word_index dict.
+    
+    pad_sequence:   A numpy array with padded values as per max_length defined.
+    
+    Attributes:
+        token(ob): saved token of w2vec embeddings.
+        max_length(int): for padding
+        list_of_list_of_tokens(list):list of tokenized reviews
+    
+    Returns:
+        padded_np_array: Numpy array for reviews with values for each token taken from word_index dict.
+
+    """
 
     tr=[' '.join(seq[:max_length]) for seq in list_of_list_tokens]  #['This product is very good','']
    
@@ -366,23 +384,33 @@ def texts_to_sequences(token,max_length,list_of_list_tokens):
     return padded_np_array
 
 def embedding_matrix(token,w2v_embeddings):
+    """
+    Loading the embeddings created by w2v for feeding the corresponding vectors in embedding matrix.
 
-    e_dim=w2v_embeddings.vector_size            #350
+    Arguments: 
+        token(ob): keras Tokenizer object having word_index dict. 
+        w2v_embeddings(ob): w2v embedding object 
+    Returns: 
+        e_dim: vector size taken during embeddings
+        v_size: total number of words in the dictionary.
+        embed_matrix: Embedding matrix with array from word2vec embeddings. shape: (v_size,e_dim) 
+    """
+    e_dim=w2v_embeddings.vector_size                # vector size taken during embeddings. i.e. 350
 
-    print("vector size embedding",e_dim)
+    print("vector size embedding",e_dim)            
 
-    v_size=len(token.word_index)+1 
+    v_size=len(token.word_index)+1                  # total number of words in the dictionary.
 
     print("vocabulary_size: ",v_size)
     
     # making the embedding matrtix and feeding with array from word2vec embeddings.
 
-    embed_matrix=np.random.randn(v_size,e_dim) #114556*350
+    embed_matrix=np.random.randn(v_size,e_dim) 
     for word,index in token.word_index.items():
         if word in w2v_embeddings.wv.vocab:
-            embed_matrix[index]=w2v_embeddings[word]#feeding the embedding matrix with array from word2vec embeddings
+            embed_matrix[index]=w2v_embeddings[word]        #feeding the embedding matrix with array from word2vec embeddings
         else:
-            embed_matrix[index]=np.random.randn(1,e_dim) # if word from word index is not there in word2vec embeddings, input randomly.
+            embed_matrix[index]=np.random.randn(1,e_dim)    #If word from word index is not there in word2vec embeddings, input randomly.
     
 
 
@@ -393,29 +421,29 @@ def model1(vocab_len, model_dim, weights_matrix, len_review, X_train, y_train):
 
     model = Sequential()
 
-    model.add(Embedding(input_dim = vocab_len, output_dim = model_dim, weights = [weights_matrix], input_length = len_review,trainable=True))
+    model.add(Embedding(input_dim = vocab_len, output_dim = model_dim, weights = [weights_matrix], input_length = len_review,trainable=False))
 
     model.add(Conv1D(32, 3, padding='same', activation='relu'))
 
-    model.add(MaxPooling1D())
+    # model.add(MaxPooling1D())
 
     model.add(Flatten())
 
     model.add(Dense(128, activation = 'relu'))
 
-    model.add(Dropout(rate = 0.3))
+    # model.add(Dropout(rate = 0.3))
 
     model.add(Dense(2,activation ='softmax'))
 
     model.compile(loss ='categorical_crossentropy', optimizer = 'adam', metrics = ['accuracy'])
 
-    model.fit(X_train, y_train, batch_size = 100, epochs = 5)
+    model.fit(X_train, y_train, batch_size = 1024, epochs = 10)
 
-    # acc_score = model.evaluate(X_test,y_test)
+    acc_score = model.evaluate(X_train,y_train)
 
     print("Test Accuracy is {}% ".format(acc_score[1] * 100))
 
-    model.save("CNN.model")
+    model.save(os.path.join("models/","nlp_model.h5"))
 
 
 
@@ -460,13 +488,16 @@ if __name__ == "__main__":
     y_train=np.asarray(train_df['Label'])
     y_train=np_utils.to_categorical(y_train)
     y_train=pd.DataFrame(y_train)
-    
+    print(y_train)
     print(X_train.shape)
     print(y_train.shape)
     
     model1(v_size, e_dim, embed_matrix, max_length, X_train, y_train)
+
+    """
     # 2. Train your network
 	# 		Make sure to print your training loss and accuracy within training to show progress
 	# 		Make sure you print the final training accuracy
 
 	# 3. Save your model
+    """
