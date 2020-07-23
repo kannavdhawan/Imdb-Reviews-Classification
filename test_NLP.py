@@ -25,7 +25,7 @@ from keras.models import Sequential
 from keras.layers import Input, Dense, Embedding, Dropout, Activation, Flatten,Conv1D,MaxPooling1D
 from keras import regularizers
 from keras.preprocessing.text import tokenizer_from_json
-
+from sklearn.metrics import accuracy_score
 # from train_NLP import random_testing,texts_to_sequences
 import warnings
 warnings.filterwarnings('ignore')
@@ -215,16 +215,17 @@ def tokenize_word_sentences(list_text):
 
 
 def get_vars():
-    stopword_list_1=[ 'we', 'our', 'ours', 'ourselves', 'you', "you're",'i', 'me', 'my', 'myself', "you've", "you'll", "you'd", 'your',
-                        'yours', 'yourself', 'yourselves', 'he', 'him', 'his', 'himself', 'she', "she's", 'her', 'hers', 'herself']
-    stopword_list_2=["a", "about", 'other',  'such',  'own', 'same', 'so', 'than','s',
-                            't', 'can', 'will', 'don', 'now', 'd','s']
+    stopword_list_1=[ 'we', 'our', 'ours', 'ourselves', 'you', "you're",'i', 'me', 'he',
+                     'him', 'his', 'himself', 'she', "she's", 'her', 'hers', 'herself']
+    stopword_list_2=["a",'s','t', 'can', 'will', 'don', 'now', 'd','s']
     stopword_list=list(set(stopword_list_1).union(set(stopword_list_2)))
 
     return stopword_list
 
 
 if __name__ == "__main__":
+
+    # Loading the testing data
 
     X_test,y_test=load_data(os.path.join("data",'aclImdb','test'))  # Loading the dataset
     random_testing(X_test,y_test,1)                                 # Randomly chceking the shape and values of X_train,y_train
@@ -246,7 +247,7 @@ if __name__ == "__main__":
     print("Tokenizing..")
     X_test=tokenize_word_sentences(X_test)                          #A list of list of strings as tokens. 
     
-    max_length=700                                                 # same as trainset
+    max_length=450                                                 # same as trainset
     
     with open(os.path.join("models",'tokenizer.json')) as f:        # Loading the saved tokenizer from json
         data_json = json.load(f)
@@ -261,24 +262,35 @@ if __name__ == "__main__":
 
     X_test=pd.DataFrame(pad_test_data)  
 
-    y_test=np.asarray(test_df['Label'])
+    y_test=np.asarray(test_df['Label'])                                 # converting the test labels into categorical labels because of categorical_crossentropy.
+
     y_test=np_utils.to_categorical(y_test)
     y_test=pd.DataFrame(y_test)
-
+    
+    # loading the saved model 
+    
     nlp_model=keras.models.load_model(os.path.join('models/',"nlp_model.h5"))
 
+    # Run prediction on the test data and print the test accuracy    
+    print("evaluating..")
+    
+    acc=nlp_model.evaluate(X_test,y_test)
+    print("Accuracy at test set is ",acc[1])
+
+
+
     print("Predicting..")
+
     y_pred=nlp_model.predict(X_test)
-    print(y_pred)
     y_pred=np.argmax(y_pred, axis=-1)
     y_pred=y_pred.tolist()
 
-    print(y_pred[0:10])
-    y_pred=pd.DataFrame(y_pred)
-    acc=nlp_model.evaluate(X_test,y_test)
-    print(acc)
-	# 1. Load your saved model
+    y_test=np.argmax(np.asarray(y_test), axis=-1)
+    y_test=y_test.tolist()
 
-	# 2. Load your testing data
+    acc_score=accuracy_score(y_pred,y_test)
+    print("Accuracy at test set is: ",acc_score*100)
 
-	# 3. Run prediction on the test data and print the test accuracy
+    
+    
+

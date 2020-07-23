@@ -327,11 +327,11 @@ def fit_on_text(data):
     
     print("Inside fit on text..")
 
-    length_list=[len(seq) for seq in data]
-    avg=sum(length_list)/len(length_list)
-    max_length= int(max(length_list)-avg)                                 #max-average number of words in each sentence.   
-    max_length=700 
-    print("Max length for pad sequences: ",max_length)
+    # length_list=[len(seq) for seq in data]
+    # avg=sum(length_list)/len(length_list)
+    # max_length= int(max(length_list)-avg)/5                                 #max-average number of words in each sentence.   
+    max_length=450      #defining after finding optimal value
+    # print("Max length for pad sequences: ",max_length)
     
 
     token=Tokenizer()       #Defining the Tokenizer object 
@@ -368,17 +368,17 @@ def texts_to_sequences(token,max_length,list_of_list_tokens):
 
     tr=[' '.join(seq[:max_length]) for seq in list_of_list_tokens]  #['This product is very good','']
    
-    print(tr[0:1])
+    # print(tr[0:1])
 
     list_of_seq_strings = token.texts_to_sequences(tr)
 
-    print(tr[0:1])
+    # print(tr[0:1])
    
 
     padded_np_array = pad_sequences(list_of_seq_strings, maxlen=max_length, padding='post', truncating='post')
 
-    print("shape: ",padded_np_array.shape)
-    print(padded_np_array[0])
+    # print("shape: ",padded_np_array.shape)
+    # print(padded_np_array[0])
 
     return padded_np_array
 
@@ -396,53 +396,61 @@ def embedding_matrix(token,w2v_embeddings):
     """
     e_dim=w2v_embeddings.vector_size                # vector size taken during embeddings. i.e. 350
 
-    print("vector size embedding",e_dim)            
+    # print("vector size embedding",e_dim)            
 
     v_size=len(token.word_index)+1                  # total number of words in the dictionary.
 
-    print("vocabulary_size: ",v_size)
+    # print("vocabulary_size: ",v_size)
     
     # making the embedding matrtix and feeding with array from word2vec embeddings.
 
     embed_matrix=np.random.randn(v_size,e_dim) 
     for word,index in token.word_index.items():
         if word in w2v_embeddings.wv.vocab:
-            embed_matrix[index]=w2v_embeddings[word]        #feeding the embedding matrix with array from word2vec embeddings
+            embed_matrix[index]=w2v_embeddings[word]        #feeding the embedding matrix with array from word2vec embeddings.
         else:
             embed_matrix[index]=np.random.randn(1,e_dim)    #If word from word index is not there in word2vec embeddings, input randomly.
     
 
-
     return e_dim,v_size,embed_matrix
 
 
-def model1(vocab_len, model_dim, weights_matrix, len_review, X_train, y_train):
+def model_nlp(v_size, e_dim, embed_matrix, max_length, X_train, y_train):
+    """
+    Attributes:
+        v_size: vocab size of word_index dictionary.
+        e_dim:  embedding dimensions is the vector size taken at word2vec. 
+        embed_matrix: Matrix with shape(v_size,emb_dim) which is fed at the embedding layer. 
+        max_length: input length to the embediing layer. It is same for all the reviews because of padding. 
+        X_train: padded sequence dataframe
+        y_train: categorical labels dataframe
+
+    Trains the model and saves the model. 
+    """
 
     model = Sequential()
 
-    model.add(Embedding(input_dim = vocab_len, output_dim = model_dim, weights = [weights_matrix], input_length = len_review,trainable=False))
+    # Embedding layer with Trainable=True so that the backpropagation can be done and the weights can be updated in accordance with the loss.
+    model.add(Embedding(input_dim = v_size, output_dim = e_dim, weights = [embed_matrix], input_length = max_length,trainable=True))
 
+    #Con1D layer is taken with 32 filters for feature extraction. 
     model.add(Conv1D(32, 3, padding='same', activation='relu'))
 
-    # model.add(MaxPooling1D())
+    model.add(Flatten())        #Flattened for Dense layer
 
-    model.add(Flatten())
+    model.add(Dense(512, activation = 'relu'))  #A dense layer with 512 units and relu as activation. 
 
-    model.add(Dense(512, activation = 'relu'))
+    model.add(Dense(2,activation ='softmax'))   #A f inal fully connected layer. 
 
-    # model.add(Dropout(0.4))
+    model.compile(loss ='categorical_crossentropy', optimizer = 'adam', metrics = ['accuracy']) 
 
-    model.add(Dense(2,activation ='softmax'))
+    model.fit(X_train, y_train, batch_size = 128, epochs = 5)  # Training the model 
 
-    model.compile(loss ='categorical_crossentropy', optimizer = 'adam', metrics = ['accuracy'])
+    acc_score = model.evaluate(X_train,y_train)         #evaluating the model 
 
-    model.fit(X_train, y_train, batch_size = 100, epochs = 10)
+    print("Training Accuracy is {}% ".format(acc_score[1] * 100))
 
-    acc_score = model.evaluate(X_train,y_train)
-
-    print("Test Accuracy is {}% ".format(acc_score[1] * 100))
-
-    model.save(os.path.join("models/","nlp_model.h5"))
+    model.save(os.path.join("models/","20831774_NLP.h5"))
 
 
 
@@ -473,30 +481,23 @@ if __name__ == "__main__":
 
     most_sim(w2v,"good",10)                                           #Prints 10 words similar to "good"
 
-    max_length,token=fit_on_text(X_train)                       
+    max_length,token=fit_on_text(X_train)                             # creating the dictionary word index 
 
-    X_train=texts_to_sequences(token,max_length,X_train)        
+    X_train=texts_to_sequences(token,max_length,X_train)              #converting the text to sequences adn padding the same with max_length  
 
-    e_dim,v_size,embed_matrix=embedding_matrix(token,w2v)                 # Making the Embedding matrix for embedding layer.
+    e_dim,v_size,embed_matrix=embedding_matrix(token,w2v)             # Making the Embedding matrix for embedding layer.
 
-    print(X_train.shape)        #np array
+    # print(X_train.shape)                                              #np array
 
-    X_train=pd.DataFrame(X_train)
+    X_train=pd.DataFrame(X_train)                                       
 
-    # Converting into categorical data 
+                                            # Converting into categorical data because softmax and categorical_crossentropy loss is taken .
     y_train=np.asarray(train_df['Label'])
     y_train=np_utils.to_categorical(y_train)
     y_train=pd.DataFrame(y_train)
-    print(y_train)
-    print(X_train.shape)
-    print(y_train.shape)
+    # print(y_train)
+    # print(X_train.shape)
+    # print(y_train.shape)
     
-    model1(v_size, e_dim, embed_matrix, max_length, X_train, y_train)
-
-    """
-    # 2. Train your network
-	# 		Make sure to print your training loss and accuracy within training to show progress
-	# 		Make sure you print the final training accuracy
-
-	# 3. Save your model
-    """
+    # calling the model 
+    model_nlp(v_size, e_dim, embed_matrix, max_length, X_train, y_train)
