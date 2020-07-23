@@ -269,15 +269,13 @@ if __name__ == "__main__":
     
     # loading the saved model 
     
-    nlp_model=keras.models.load_model(os.path.join('models/',"nlp_model.h5"))
+    nlp_model=keras.models.load_model(os.path.join('models/',"20831774_NLP.h5"))
 
     # Run prediction on the test data and print the test accuracy    
     print("evaluating..")
     
     acc=nlp_model.evaluate(X_test,y_test)
     print("Accuracy at test set is ",acc[1])
-
-
 
     print("Predicting..")
 
