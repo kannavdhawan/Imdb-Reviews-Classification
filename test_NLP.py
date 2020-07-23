@@ -24,7 +24,9 @@ from keras.utils import np_utils
 from keras.models import Sequential
 from keras.layers import Input, Dense, Embedding, Dropout, Activation, Flatten,Conv1D,MaxPooling1D
 from keras import regularizers
-from train_NLP import random_testing
+from keras.preprocessing.text import tokenizer_from_json
+
+from train_NLP import random_testing,texts_to_sequences
 import warnings
 warnings.filterwarnings('ignore')
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
@@ -216,6 +218,26 @@ if __name__ == "__main__":
     X_test=stopwords_removal(X_test,stopword_list)                  #Removes the stopwords from test set
     
     X_test=tokenize_word_sentences(X_test)                          #A list of list of strings as tokens. 
+    
+    max_length=2098                                                 # same as trainset
+    
+    with open(os.path.join("models",'tokenizer.json')) as f:        # Loading the saved tokenizer from json
+        data_json = json.load(f)
+
+    token= tokenizer_from_json(data_json)                           # using keras function to load the object
+
+    tst=[' '.join(seq[:]) for seq in X_test]                        #['This product is very good','']
+
+    seq_test_data= token.texts_to_sequences(tst)                    # converting the test data into sequences.
+
+    pad_test_data=pad_sequences(seq_test_data, maxlen=max_length, padding='post', truncating='post') #Padding them, converting into np array.
+
+    X_test=pd.DataFrame(pad_test_data)  
+
+    y_test=np.asarray(test_df['Label'])
+    y_test=np_utils.to_categorical(y_test)
+    y_test=pd.DataFrame(y_test)
+
 
 
 	# 1. Load your saved model

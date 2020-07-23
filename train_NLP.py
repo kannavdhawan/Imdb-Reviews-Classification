@@ -347,24 +347,75 @@ def fit_on_text(data):
 
     return max_length,token
 
-def texts_to_sequences(token,max_length,X_train):
+def texts_to_sequences(token,max_length,list_of_list_tokens):
 
-    tr=[' '.join(seq[:max_length]) for seq in X_train]  #['This product is very good','']
+    tr=[' '.join(seq[:max_length]) for seq in list_of_list_tokens]  #['This product is very good','']
    
     print(tr[0:1])
 
-    X_train = token.texts_to_sequences(tr)
+    list_of_seq_strings = token.texts_to_sequences(tr)
 
     print(tr[0:1])
    
 
-    X_train = pad_sequences(X_train, maxlen=max_length, padding='post', truncating='post')
+    padded_np_array = pad_sequences(list_of_seq_strings, maxlen=max_length, padding='post', truncating='post')
 
-    print("shape train:",X_train.shape)
-    print(X_train[0])
+    print("shape: ",padded_np_array.shape)
+    print(padded_np_array[0])
 
-    return X_train
+    return padded_np_array
 
+def embedding_matrix(token,w2v_embeddings):
+
+    e_dim=w2v_embeddings.vector_size            #350
+
+    print("vector size embedding",e_dim)
+
+    v_size=len(token.word_index)+1 
+
+    print("vocabulary_size: ",v_size)
+    
+    # making the embedding matrtix and feeding with array from word2vec embeddings.
+
+    embed_matrix=np.random.randn(v_size,e_dim) #114556*350
+    for word,index in token.word_index.items():
+        if word in w2v_embeddings.wv.vocab:
+            embed_matrix[index]=w2v_embeddings[word]#feeding the embedding matrix with array from word2vec embeddings
+        else:
+            embed_matrix[index]=np.random.randn(1,e_dim) # if word from word index is not there in word2vec embeddings, input randomly.
+    
+
+
+    return e_dim,v_size,embed_matrix
+
+
+def model1(vocab_len, model_dim, weights_matrix, len_review, X_train, y_train):
+
+    model = Sequential()
+
+    model.add(Embedding(input_dim = vocab_len, output_dim = model_dim, weights = [weights_matrix], input_length = len_review,trainable=True))
+
+    model.add(Conv1D(32, 3, padding='same', activation='relu'))
+
+    model.add(MaxPooling1D())
+
+    model.add(Flatten())
+
+    model.add(Dense(128, activation = 'relu'))
+
+    model.add(Dropout(rate = 0.3))
+
+    model.add(Dense(2,activation ='softmax'))
+
+    model.compile(loss ='categorical_crossentropy', optimizer = 'adam', metrics = ['accuracy'])
+
+    model.fit(X_train, y_train, batch_size = 100, epochs = 5)
+
+    # acc_score = model.evaluate(X_test,y_test)
+
+    print("Test Accuracy is {}% ".format(acc_score[1] * 100))
+
+    model.save("CNN.model")
 
 
 
@@ -386,8 +437,6 @@ if __name__ == "__main__":
     X_train=lower_text(X_train)                                       #lowercasing the train dataset
 
     
-    
-    
     stopword_list=get_vars()                                          #Stopwords list
     X_train=stopwords_removal(X_train,stopword_list)                  #Removes the stopwords from train set
     
@@ -397,11 +446,26 @@ if __name__ == "__main__":
 
     most_sim(w2v,"good",10)                                           #Prints 10 words similar to "good"
 
-    max_length,token=fit_on_text(X_train)
+    max_length,token=fit_on_text(X_train)                       
 
-    X_train=texts_to_sequences(token,max_length,X_train)
+    X_train=texts_to_sequences(token,max_length,X_train)        
 
-	# 2. Train your network
+    e_dim,v_size,embed_matrix=embedding_matrix(token,w2v)                 # Making the Embedding matrix for embedding layer.
+
+    print(X_train.shape)        #np array
+
+    X_train=pd.DataFrame(X_train)
+
+    # Converting into categorical data 
+    y_train=np.asarray(train_df['Label'])
+    y_train=np_utils.to_categorical(y_train)
+    y_train=pd.DataFrame(y_train)
+    
+    print(X_train.shape)
+    print(y_train.shape)
+    
+    model1(v_size, e_dim, embed_matrix, max_length, X_train, y_train)
+    # 2. Train your network
 	# 		Make sure to print your training loss and accuracy within training to show progress
 	# 		Make sure you print the final training accuracy
 
