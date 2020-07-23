@@ -225,6 +225,7 @@ def tokenize_word_sentences(list_text):
     Returns: 
         A list of list of strings as tokens. 
     """
+
     print("Tokenizing reviews..")
     tokenized_list = []
     for review in list_text:
@@ -232,10 +233,10 @@ def tokenize_word_sentences(list_text):
           
     return tokenized_list      
 
-
 def get_vars():
     print("Getting stopwords..")
-    stopword_list_1=[ 'we', 'our', 'ours', 'ourselves', 'you', "you're",'i', 'me', 'he', 'him', 'his', 'himself', 'she', "she's", 'her', 'hers', 'herself']
+    stopword_list_1=[ 'we', 'our', 'ours', 'ourselves', 'you', "you're",'i', 'me', 'he',
+                     'him', 'his', 'himself', 'she', "she's", 'her', 'hers', 'herself']
     stopword_list_2=["a",'s','t', 'can', 'will', 'don', 'now', 'd','s']
     stopword_list=list(set(stopword_list_1).union(set(stopword_list_2)))
 
