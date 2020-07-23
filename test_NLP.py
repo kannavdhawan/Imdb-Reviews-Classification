@@ -26,7 +26,7 @@ from keras.layers import Input, Dense, Embedding, Dropout, Activation, Flatten,C
 from keras import regularizers
 from keras.preprocessing.text import tokenizer_from_json
 
-from train_NLP import random_testing,texts_to_sequences
+# from train_NLP import random_testing,texts_to_sequences
 import warnings
 warnings.filterwarnings('ignore')
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
@@ -76,6 +76,33 @@ def load_data(data_path):
                     X.append(f.read())
                 y.append(0 if sentiment == 'neg' else 1)
     return X,y
+
+def random_testing(*vars):
+    """
+    A function with flags to check the returned values by different functions.
+    
+    Arguments:
+        Variable number of arguments having
+            - dt1
+            - dt2
+            - ..
+            - flag
+
+    """
+    print("Random Testing..")
+    args=[]
+    for var in vars:
+        args.append(var)
+    
+    if args[-1]==1:
+        print("Randomly checking train features: ",args[0][0:1])
+        print("Length of train features: ",len(args[0]))
+        print("Randomly checking train labels: ",args[1][0:1])
+        print("Length of train labels: ",len(args[1]))
+
+    if args[-1]==2:
+        print(args[0].head(2))
+        print(args[0].tail(2))
 
 
 def base_df(fea,labels):
@@ -205,7 +232,7 @@ if __name__ == "__main__":
     test_df=base_df(X_test,y_test)                                  # converting into dataframe
     random_testing(test_df,2)
 
-
+    print("Removing punctuatons..")
     punctuations="[\s.;:!\'?,\"()\[\]/_ÉºèíÁ{()ïá`&₤%äÜô“êðßÈ³¾âø;Ø\®»!-=ñÀöã?!#$%&'()*+,-./:;<=>?@[\]^_`{|}~å°@0¨ë:¢û*$´ùóüçúî~½<’æ‘§}£.«ÕÊì¤ÃÄ·,éý|-Åō#ò¿–à><]"
     
     X_test=punctuation_remover(test_df['Text'],punctuations)        # A list of reviews with removed punctuations (Manually found punctuations)
@@ -213,13 +240,13 @@ if __name__ == "__main__":
 
 
     X_test=lower_text(X_test)                                       # lowercases the test data
-
+    print("Removing stopwords..")
     stopword_list=get_vars()                                        # Stopwords list
     X_test=stopwords_removal(X_test,stopword_list)                  #Removes the stopwords from test set
-    
+    print("Tokenizing..")
     X_test=tokenize_word_sentences(X_test)                          #A list of list of strings as tokens. 
     
-    max_length=2098                                                 # same as trainset
+    max_length=700                                                 # same as trainset
     
     with open(os.path.join("models",'tokenizer.json')) as f:        # Loading the saved tokenizer from json
         data_json = json.load(f)
@@ -229,7 +256,7 @@ if __name__ == "__main__":
     tst=[' '.join(seq[:]) for seq in X_test]                        #['This product is very good','']
 
     seq_test_data= token.texts_to_sequences(tst)                    # converting the test data into sequences.
-
+    print("Pad sequencing..")
     pad_test_data=pad_sequences(seq_test_data, maxlen=max_length, padding='post', truncating='post') #Padding them, converting into np array.
 
     X_test=pd.DataFrame(pad_test_data)  
@@ -238,8 +265,18 @@ if __name__ == "__main__":
     y_test=np_utils.to_categorical(y_test)
     y_test=pd.DataFrame(y_test)
 
+    nlp_model=keras.models.load_model(os.path.join('models/',"nlp_model.h5"))
 
+    print("Predicting..")
+    y_pred=nlp_model.predict(X_test)
+    print(y_pred)
+    y_pred=np.argmax(y_pred, axis=-1)
+    y_pred=y_pred.tolist()
 
+    print(y_pred[0:10])
+    y_pred=pd.DataFrame(y_pred)
+    acc=nlp_model.evaluate(X_test,y_test)
+    print(acc)
 	# 1. Load your saved model
 
 	# 2. Load your testing data

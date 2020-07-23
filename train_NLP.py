@@ -235,10 +235,8 @@ def tokenize_word_sentences(list_text):
 
 def get_vars():
     print("Getting stopwords..")
-    stopword_list_1=[ 'we', 'our', 'ours', 'ourselves', 'you', "you're",'i', 'me', 'my', 'myself', "you've", "you'll", "you'd", 'your',
-                        'yours', 'yourself', 'yourselves', 'he', 'him', 'his', 'himself', 'she', "she's", 'her', 'hers', 'herself']
-    stopword_list_2=["a", "about", 'other',  'such',  'own', 'same', 'so', 'than','s',
-                            't', 'can', 'will', 'don', 'now', 'd','s']
+    stopword_list_1=[ 'we', 'our', 'ours', 'ourselves', 'you', "you're",'i', 'me', 'he', 'him', 'his', 'himself', 'she', "she's", 'her', 'hers', 'herself']
+    stopword_list_2=["a",'s','t', 'can', 'will', 'don', 'now', 'd','s']
     stopword_list=list(set(stopword_list_1).union(set(stopword_list_2)))
 
     return stopword_list
@@ -259,7 +257,7 @@ def w2v_embedding(formatted_dataset):
 
     print("Generating embeddings using w2vec...")
     start=timeit.default_timer()
-    w2v=Word2Vec(sentences=formatted_dataset,min_count=5, size=350,window=3,workers=4,iter=8) #sample=e-5, alpha=0.01,min_alpha=0.0001
+    w2v=Word2Vec(sentences=formatted_dataset,min_count=8, size=350,window=3,workers=4,iter=5) #sample=e-5, alpha=0.01,min_alpha=0.0001
     stop=timeit.default_timer()
     print("Time taken: ",stop-start)
     w2v.save(os.path.join("models/","word2vec.model"))
@@ -331,11 +329,11 @@ def fit_on_text(data):
     length_list=[len(seq) for seq in data]
     avg=sum(length_list)/len(length_list)
     max_length= int(max(length_list)-avg)                                 #max-average number of words in each sentence.   
-    max_length=500 
+    max_length=700 
     print("Max length for pad sequences: ",max_length)
     
 
-    token=Tokenizer(filters='!"#$%&()*+,-./:;<=>?@[\\]^_`{|}~\t\n')       #Defining the Tokenizer object 
+    token=Tokenizer()       #Defining the Tokenizer object 
     
     list_of_strings_full_data=[' '.join(seq[:]) for seq in data]          # Making list of strings for token ob
     
@@ -429,15 +427,15 @@ def model1(vocab_len, model_dim, weights_matrix, len_review, X_train, y_train):
 
     model.add(Flatten())
 
-    model.add(Dense(128, activation = 'relu'))
+    model.add(Dense(512, activation = 'relu'))
 
-    # model.add(Dropout(rate = 0.3))
+    # model.add(Dropout(0.4))
 
     model.add(Dense(2,activation ='softmax'))
 
     model.compile(loss ='categorical_crossentropy', optimizer = 'adam', metrics = ['accuracy'])
 
-    model.fit(X_train, y_train, batch_size = 1024, epochs = 10)
+    model.fit(X_train, y_train, batch_size = 100, epochs = 10)
 
     acc_score = model.evaluate(X_train,y_train)
 
