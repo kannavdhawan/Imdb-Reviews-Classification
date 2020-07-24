@@ -269,7 +269,7 @@ if __name__ == "__main__":
     
     # loading the saved model 
     
-    nlp_model=keras.models.load_model(os.path.join('models/',"20831774_NLP.h5"))
+    nlp_model=keras.models.load_model(os.path.join('models/',"20831774_NLP_model.h5"))
 
     # Run prediction on the test data and print the test accuracy    
     print("evaluating..")

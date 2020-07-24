@@ -428,6 +428,14 @@ def model_nlp(v_size, e_dim, embed_matrix, max_length, X_train, y_train):
     Trains the model and saves the model. 
     """
 
+    
+    # model.add(Bidirectional(LSTM(20, return_sequences=True)))                 #obsolete model 
+    # model.add(Bidirectional(LSTM(10)))
+    # model.add(Dense(128))
+
+    # model.add(Dense(1, activation='sigmoid'))
+    # model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy']) 
+
     model = Sequential()
 
     # Embedding layer with Trainable=True so that the backpropagation can be done and the weights can be updated in accordance with the loss.
@@ -450,7 +458,7 @@ def model_nlp(v_size, e_dim, embed_matrix, max_length, X_train, y_train):
 
     print("Training Accuracy is {}% ".format(acc_score[1] * 100))
 
-    model.save(os.path.join("models/","20831774_NLP.h5"))
+    model.save(os.path.join("models/","20831774_NLP_model.h5"))
 
 
 

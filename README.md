@@ -22,3 +22,5 @@
 | Testing Accuracy | Testing Loss
 ----|---
 86.07%|0.5164
+
+
