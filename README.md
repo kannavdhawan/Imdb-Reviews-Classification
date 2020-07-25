@@ -1,15 +1,16 @@
-- case 1 
+<!-- - case 1 
     - dense 1 
     - sigmoid , no softmax  it will give 50% accuracy
     - binary cross entropy loss
     - normal labels not categorical 
-
+-->
+<!--
 - case 2 
     - dense 2
     - softmax
     - categorical cross entropy
     - categorical labels
-
+-->
 
 |Epoch| Training Accuracy | Training Loss
 ---|----|---
@@ -24,3 +25,4 @@
 86.07%|0.5164
 
 
+####### unc
